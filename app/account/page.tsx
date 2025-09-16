@@ -1,65 +1,57 @@
-"use client"
-import { useEffect, useState } from "react"
-import { supabaseBrowser } from "@/lib/supabase-browser"
+'use client';
+import { useState } from 'react';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 
 export default function AccountPage() {
-  const supabase = supabaseBrowser()
-  const [emailInput, setEmailInput] = useState("")
-  const [userEmail, setUserEmail] = useState<string | null>(null)
-  const [status, setStatus] = useState<string>("")
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState<null | 'sending' | 'sent' | 'error'>(null);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUserEmail(data.user?.email ?? null)
-    })
+  const onSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus('sending');
+    setErrorMsg('');
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserEmail(session?.user?.email ?? null)
-    })
-    return () => sub.subscription.unsubscribe()
-  }, [supabase])
+    const supabase = supabaseBrowser();
 
-  async function signIn() {
-    setStatus("Sending magic link…")
+    // Pick a base URL: env in prod, window.origin in dev, fall back to https://www.arcaneum.world
+    const base =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      (typeof window !== 'undefined' ? window.location.origin : 'https://www.arcaneum.world');
+
     const { error } = await supabase.auth.signInWithOtp({
-      email: emailInput,
-      options: { emailRedirectTo: `${location.origin}/auth/callback?next=/account` },
-    })
-    if (error) setStatus(`Error: ${error.message}`)
-    else setStatus("Check your email for the magic link ✨")
-  }
+      email,
+      options: {
+        emailRedirectTo: `${base}/auth/callback`,
+      },
+    });
 
-  async function signOut() {
-    await supabase.auth.signOut()
-    setStatus("Signed out")
-  }
+    if (error) { setStatus('error'); setErrorMsg(error.message); return; }
+    setStatus('sent');
+  };
 
   return (
-    <main className="min-h-screen bg-black text-white p-6">
-      <h1 className="text-3xl font-semibold mb-6">Account</h1>
-
-      {userEmail ? (
-        <div className="space-y-4">
-          <p>Signed in as <span className="font-medium">{userEmail}</span></p>
-          <button onClick={signOut} className="rounded bg-purple-600 px-4 py-2">
-            Sign Out
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <input
-            type="email"
-            value={emailInput}
-            onChange={(e) => setEmailInput(e.target.value)}
-            placeholder="you@example.com"
-            className="w-full rounded px-4 py-2 text-black"
-          />
-          <button onClick={signIn} className="rounded bg-purple-600 px-4 py-2">
-            Send Magic Link
-          </button>
-          {status && <p className="text-sm text-gray-300">{status}</p>}
-        </div>
-      )}
-    </main>
-  )
+    <div className="max-w-md mx-auto py-16 space-y-6">
+      <h1 className="text-3xl font-bold">Account</h1>
+      <form onSubmit={onSend} className="space-y-3">
+        <input
+          type="email"
+          required
+          placeholder="you@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2"
+        />
+        <button
+          type="submit"
+          disabled={status === 'sending'}
+          className="rounded-lg bg-violet-600 px-4 py-2 font-medium"
+        >
+          {status === 'sending' ? 'Sending…' : 'Send Magic Link'}
+        </button>
+      </form>
+      {status === 'sent' && <p>Check your email for the magic link ✨</p>}
+      {status === 'error' && <p className="text-red-400">Error: {errorMsg}</p>}
+    </div>
+  );
 }
