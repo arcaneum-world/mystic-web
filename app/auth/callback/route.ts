@@ -1,4 +1,4 @@
-k/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createServerClient } from "@supabase/ssr"
@@ -49,4 +49,3 @@ export async function GET(req: Request) {
     )
   }
 }
-
