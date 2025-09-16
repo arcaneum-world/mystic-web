@@ -11,9 +11,10 @@ export async function GET(req: Request) {
     return NextResponse.redirect(new URL(`/account?error=missing_code`, url.origin))
   }
 
+  // Use Next.js cookies and infer the correct options type so we don't use "any"
   const cookieStore = cookies()
+  type CookieSetOptions = Parameters<typeof cookieStore.set>[2]
 
-  // IMPORTANT: provide get/set/remove so Supabase can write the session cookie
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -22,10 +23,10 @@ export async function GET(req: Request) {
         get(name: string) {
           return cookieStore.get(name)?.value
         },
-        set(name: string, value: string, options: any) {
+        set(name: string, value: string, options: CookieSetOptions) {
           cookieStore.set(name, value, options)
         },
-        remove(name: string, options: any) {
+        remove(name: string, options: CookieSetOptions) {
           cookieStore.set(name, "", { ...options, maxAge: 0 })
         },
       },
@@ -36,12 +37,15 @@ export async function GET(req: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (error) {
       const msg = encodeURIComponent(error.message || "exchange failed")
-      return NextResponse.redirect(new URL(`/account?error=exchange_failed&error_description=${msg}`, url.origin))
+      return NextResponse.redirect(
+        new URL(`/account?error=exchange_failed&error_description=${msg}`, url.origin)
+      )
     }
-    // success → go to the intended page
     return NextResponse.redirect(new URL(next, url.origin))
-  } catch (e: any) {
-    const msg = encodeURIComponent(e?.message || "unknown")
-    return NextResponse.redirect(new URL(`/account?error=callback_exception&error_description=${msg}`, url.origin))
+  } catch (e) {
+    const msg = encodeURIComponent((e as Error)?.message || "unknown")
+    return NextResponse.redirect(
+      new URL(`/account?error=callback_exception&error_description=${msg}`, url.origin)
+    )
   }
 }
