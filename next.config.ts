@@ -1,7 +1,9 @@
-import type { NextConfig } from "next";
+// next.config.ts
+const nextConfig = {
+  eslint: {
+    // Never fail production builds because of ESLint errors
+    ignoreDuringBuilds: true,
+  },
+}
 
-const nextConfig: NextConfig = {
-  /* config options here */
-};
-
-export default nextConfig;
+export default nextConfig

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createServerClient } from "@supabase/ssr"
@@ -12,7 +11,7 @@ export async function GET(req: Request) {
     return NextResponse.redirect(new URL(`/account?error=missing_code`, url.origin))
   }
 
-  // Use Next.js cookies and infer the correct options type so we don't use "any"
+  // No "any" — infer options type from Next's cookie setter
   const cookieStore = cookies()
   type CookieSetOptions = Parameters<typeof cookieStore.set>[2]
 
