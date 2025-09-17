@@ -1,33 +1,36 @@
-'use client';
-import { useState } from 'react';
-import { supabaseBrowser } from '@/lib/supabase-browser';
+"use client";
+
+import { useState } from "react";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 
 export default function AccountPage() {
-  const [email, setEmail] = useState('');
-  const [status, setStatus] = useState<null | 'sending' | 'sent' | 'error'>(null);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<null | "sending" | "sent" | "error">(null);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const onSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStatus('sending');
-    setErrorMsg('');
+    setStatus("sending");
+    setErrorMsg("");
 
     const supabase = supabaseBrowser();
 
-    // Pick a base URL: env in prod, window.origin in dev, fall back to https://www.arcaneum.world
+    // Choose base URL: env in prod, origin in dev, then hard-fallback to www
     const base =
       process.env.NEXT_PUBLIC_SITE_URL ||
-      (typeof window !== 'undefined' ? window.location.origin : 'https://www.arcaneum.world');
+      (typeof window !== "undefined" ? window.location.origin : "https://www.arcaneum.world");
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: {
-        emailRedirectTo: `${base}/auth/callback`,
-      },
+      options: { emailRedirectTo: `${base}/auth/callback` },
     });
 
-    if (error) { setStatus('error'); setErrorMsg(error.message); return; }
-    setStatus('sent');
+    if (error) {
+      setStatus("error");
+      setErrorMsg(error.message);
+      return;
+    }
+    setStatus("sent");
   };
 
   return (
@@ -44,14 +47,15 @@ export default function AccountPage() {
         />
         <button
           type="submit"
-          disabled={status === 'sending'}
+          disabled={status === "sending"}
           className="rounded-lg bg-violet-600 px-4 py-2 font-medium"
         >
-          {status === 'sending' ? 'Sending…' : 'Send Magic Link'}
+          {status === "sending" ? "Sending..." : "Send Magic Link"}
         </button>
       </form>
-      {status === 'sent' && <p>Check your email for the magic link ✨</p>}
-      {status === 'error' && <p className="text-red-400">Error: {errorMsg}</p>}
+
+      {status === "sent" && <p>Check your email for the magic link ✨</p>}
+      {status === "error" && <p className="text-red-400">Error: {errorMsg}</p>}
     </div>
   );
 }
