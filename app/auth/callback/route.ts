@@ -2,18 +2,21 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 
-type CookieSetOptions = Parameters<ReturnType<typeof cookies>["set"]>[2];
-
+/**
+ * Handles Supabase email magic-link callback.
+ * Exchanges the code for a session, sets cookies, then redirects.
+ */
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
-  const next = url.searchParams.get("next") || "/account";
+  const next = url.searchParams.get("next") ?? "/account";
 
   if (!code) {
     return NextResponse.redirect(new URL("/account?error=missing_code", url.origin));
   }
 
   const cookieStore = cookies();
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -22,19 +25,23 @@ export async function GET(req: Request) {
         get(name: string) {
           return cookieStore.get(name)?.value;
         },
-        set(name: string, value: string, options: CookieSetOptions) {
+        set(name: string, value: string, options: Parameters<typeof cookieStore.set>[2]) {
           cookieStore.set({ name, value, ...options });
         },
-        remove(name: string, options: CookieSetOptions) {
-          cookieStore.set({ name, value: "", ...options, maxAge: 0 });
+        remove(name: string, options: Parameters<typeof cookieStore.set>[2]) {
+          cookieStore.set({ name, value: "", ...options });
         },
       },
     }
   );
 
+  // Exchange the code for a session (sets auth cookies via the adapter above)
   const { error } = await supabase.auth.exchangeCodeForSession(code);
-  const dest = new URL(next, url.origin);
-  if (error) dest.searchParams.set("error", error.message);
+  if (error) {
+    return NextResponse.redirect(
+      new URL(`/account?error=${encodeURIComponent(error.message)}`, url.origin)
+    );
+  }
 
-  return NextResponse.redirect(dest);
+  return NextResponse.redirect(new URL(next, url.origin));
 }
