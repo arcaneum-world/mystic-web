@@ -5,6 +5,7 @@ export type Card = {
   reversed: string;
 };
 
+// -------------------- Major Arcana (22) --------------------
 export const MAJOR_ARCANA: Card[] = [
   { id: 0, name: "The Fool", upright: "new beginnings, trust, leap of faith", reversed: "hesitation, naivety, risky impulse" },
   { id: 1, name: "The Magician", upright: "willpower, skill, manifestation", reversed: "scattered energy, manipulation" },
@@ -27,10 +28,56 @@ export const MAJOR_ARCANA: Card[] = [
   { id: 18, name: "The Moon", upright: "dreams, uncertainty, subconscious", reversed: "clarity emerging, anxiety easing" },
   { id: 19, name: "The Sun", upright: "vitality, joy, success", reversed: "temporary cloud, overexposure" },
   { id: 20, name: "Judgement", upright: "awakening, calling, evaluation", reversed: "self-criticism, delay" },
-  { id: 21, name: "The World", upright: "completion, integration, travel", reversed: "loose ends, almost there" },
+  { id: 21, name: "The World", upright: "completion, integration, travel", reversed: "loose ends, almost there" }
 ];
 
-// Fisher–Yates shuffle
+// -------------------- Minor Arcana generator (56) --------------------
+const SUITS = [
+  { key: "Wands", theme: "inspiration, drive, action" },
+  { key: "Cups", theme: "emotion, relationships, intuition" },
+  { key: "Swords", theme: "thoughts, decisions, conflict" },
+  { key: "Pentacles", theme: "work, resources, body & money" }
+] as const;
+
+const RANKS = [
+  { key: "Ace", up: "seed, burst of potential", rev: "blocked start, hesitation" },
+  { key: "Two", up: "choice, planning, duality", rev: "indecision, imbalance" },
+  { key: "Three", up: "growth, collaboration, first results", rev: "delay, misalignment" },
+  { key: "Four", up: "stability, structure, consolidation", rev: "stagnation, restlessness" },
+  { key: "Five", up: "challenge, tension, tests", rev: "resolution, learning from friction" },
+  { key: "Six", up: "progress, harmony returning", rev: "stalling, difficulty moving on" },
+  { key: "Seven", up: "assessment, perseverance, strategy", rev: "impatience, scattered effort" },
+  { key: "Eight", up: "momentum, skill, movement", rev: "frustration, interruptions" },
+  { key: "Nine", up: "near completion, resilience", rev: "fatigue, defensiveness" },
+  { key: "Ten", up: "culmination, burden or plenty", rev: "release, redistribution" },
+  { key: "Page", up: "curiosity, learning, messenger", rev: "inexperience, mixed signals" },
+  { key: "Knight", up: "pursuit, action, quest", rev: "impulsive or stalled motion" },
+  { key: "Queen", up: "maturity, mastery, nurture", rev: "smothering, insecurity" },
+  { key: "King", up: "command, leadership, authority", rev: "rigidity, misuse of power" }
+] as const;
+
+function buildMinor() {
+  const out = [];
+  let id = 22;
+  for (const suit of SUITS) {
+    for (const rank of RANKS) {
+      out.push({
+        id: id++,
+        name: `${rank.key} of ${suit.key}`,
+        upright: `${rank.up} in the realm of ${suit.theme}`,
+        reversed: `${rank.rev} around ${suit.theme}`
+      });
+    }
+  }
+  return out;
+}
+
+export const MINOR_ARCANA = buildMinor();
+export const FULL_DECK = [...MAJOR_ARCANA, ...MINOR_ARCANA];
+
+// ---------- helpers ----------
+export type Drawn = { card: Card; reversed: boolean };
+
 export function shuffle<T>(arr: T[]): T[] {
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
@@ -40,15 +87,13 @@ export function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-export type Drawn = {
-  card: Card;
-  reversed: boolean;
-};
-
-export function drawThree(): Drawn[] {
-  const deck = shuffle(MAJOR_ARCANA);
-  return deck.slice(0, 3).map((card) => ({
+export function draw(count: number, majorsOnly = false): Drawn[] {
+  const deck = majorsOnly ? MAJOR_ARCANA : FULL_DECK;
+  const shuffled = shuffle(deck);
+  return shuffled.slice(0, count).map((card) => ({
     card,
-    reversed: Math.random() < 0.5,
+    reversed: Math.random() < 0.5
   }));
 }
+
+export const drawThree = (majorsOnly = false) => draw(3, majorsOnly);
