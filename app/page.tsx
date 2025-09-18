@@ -1,63 +1,52 @@
-"use client"
-import { useState } from "react"
+import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
-  const [email, setEmail] = useState("")
-  const [submitted, setSubmitted] = useState(false)
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // TODO: hook into Mailchimp, Supabase, or backend
-    console.log("Email submitted:", email)
-    setSubmitted(true)
-  }
-
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-purple-900 via-black to-purple-950 text-white px-6">
-      <div className="text-center space-y-6 max-w-2xl">
-        <h1 className="text-5xl md:text-6xl font-bold">
-          Discover <span className="text-purple-400">Your Magic</span>
-        </h1>
-        <p className="text-lg md:text-xl text-gray-300">
-          Tarot pulls, astrology, and hidden wisdom — all in one app. 
-          Be the first to access the future of esoterica.
-        </p>
+    <section className="relative isolate overflow-hidden rounded-2xl bg-gradient-to-b from-violet-700/20 via-fuchsia-700/10 to-transparent px-6 py-16 shadow-xl sm:px-10">
+      <div className="mx-auto grid max-w-5xl grid-cols-1 items-center gap-10 md:grid-cols-[auto,1fr]">
+        <div className="flex justify-center md:justify-start">
+          <Image
+            src="/arcaneum-logo.jpeg"
+            alt="Arcaneum Logo"
+            width={120}
+            height={120}
+            className="rounded-xl ring-1 ring-neutral-800"
+            priority
+          />
+        </div>
 
-        {!submitted ? (
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-col sm:flex-row items-center justify-center gap-3"
-          >
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              placeholder="Enter your email"
-              className="px-4 py-3 rounded-lg text-black w-full sm:w-72 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-            <button
-              type="submit"
-              className="px-6 py-3 rounded-lg bg-purple-600 hover:bg-purple-700 transition font-semibold w-full sm:w-auto"
-            >
-              Notify Me
-            </button>
-          </form>
-        ) : (
-          <p className="text-green-400 font-semibold">
-            ✨ Thanks! You’re on the list.
+        <div className="text-center md:text-left">
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+            <span className="text-neutral-100">Discover</span>{" "}
+            <span className="text-violet-300">Your Magic</span>
+          </h1>
+          <p className="mt-4 text-neutral-300">
+            Tarot pulls, astrology, and hidden wisdom — all in one app.
           </p>
-        )}
 
-        <div className="space-x-4 pt-4">
-          <a
-            href="#"
-            className="px-6 py-3 rounded-xl bg-gray-800 hover:bg-gray-700 transition font-semibold"
-          >
-            Learn More
-          </a>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3 md:justify-start">
+            <Link
+              href="/tarot"
+              className="rounded-lg bg-violet-700 px-4 py-2 font-medium text-white hover:bg-violet-600"
+            >
+              Try Tarot
+            </Link>
+            <Link
+              href="/astrology"
+              className="rounded-lg border border-neutral-700 px-4 py-2 font-medium text-neutral-200 hover:bg-neutral-800"
+            >
+              Astrology
+            </Link>
+            <Link
+              href="/learn"
+              className="rounded-lg border border-neutral-700 px-4 py-2 font-medium text-neutral-200 hover:bg-neutral-800"
+            >
+              Learn
+            </Link>
+          </div>
         </div>
       </div>
-    </main>
-  )
+    </section>
+  );
 }
