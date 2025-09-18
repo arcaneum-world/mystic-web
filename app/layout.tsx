@@ -1,5 +1,6 @@
 import "./globals.css";
 import Header from "@/components/Header";
+import CodeRedirector from "@/components/CodeRedirector";
 
 export const metadata = {
   title: "Arcaneum",
@@ -11,6 +12,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="bg-neutral-950 text-neutral-100">
         <Header />
+        {/* client-side fix for email links that land with ?code in wrong place */}
+        <CodeRedirector />
         <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
       </body>
     </html>
