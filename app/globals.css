@@ -2,12 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Brand title gradient (typewriter-ish mono face already set in site) */
+/* a couple of helpers we use sitewide */
 .brand-title{
   @apply font-mono font-semibold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-rose-400;
 }
-
-/* Nice primary button and ghost button helpers used across pages */
 .btn-primary{
   @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-medium
          text-white bg-violet-600 hover:bg-violet-500 active:bg-violet-700 transition;
