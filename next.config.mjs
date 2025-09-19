@@ -1,11 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
+  reactStrictMode: true,
+  images: {
+    formats: ['image/avif', 'image/webp'],
   },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  // keep these so builds don't block on TS/ESLint
+  eslint: { ignoreDuringBuilds: true },
+  typescript: { ignoreBuildErrors: true },
 };
-
 export default nextConfig;
