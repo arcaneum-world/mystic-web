@@ -1,0 +1,36 @@
+export function degreeBlurb(deg: number) {
+  const d = Math.floor(((deg % 360) + 360) % 360) % 30;
+  const table: Record<number,string> = {
+    0:  "0° — raw spark / new-cycle ignition; unfiltered potential.",
+    1:  "1° — identity stamp; bold first-step energy.",
+    2:  "2° — pairing, reflection, feedback loops.",
+    3:  "3° — early momentum, curiosity, sampling.",
+    4:  "4° — foundation, security, roots.",
+    5:  "5° — play, creativity, self-expression.",
+    6:  "6° — calibration, refinement, small fixes.",
+    7:  "7° — evaluation, meaning-making.",
+    8:  "8° — power, consolidation, leverage.",
+    9:  "9° — saturation, intuition, ripeness.",
+    10: "10° — threshold; leveling-up pressure.",
+    11: "11° — weird/genius; pattern-breaking insights.",
+    12: "12° — undoing old knots; quiet healing.",
+    13: "13° — disruptive pivot; break to rebuild.",
+    14: "14° — skill sharpening; craft mastery.",
+    15: "15° — core intensity; midpoint heat.",
+    16: "16° — crisis-then-clarity; tests of design.",
+    17: "17° — elegance; lucky alignments via prep.",
+    18: "18° — deep work; karmic layers surface.",
+    19: "19° — leadership audition; visibility.",
+    20: "20° — resonance; the right rooms/people.",
+    21: "21° — adventure; stretch your map.",
+    22: "22° — power degree; use wisely.",
+    23: "23° — networking synapses; cross-pollinate.",
+    24: "24° — devotion; long-haul stamina.",
+    25: "25° — synthesis; your method shows.",
+    26: "26° — pruning; edits that free energy.",
+    27: "27° — harvest; teach what you learned.",
+    28: "28° — finishing karma; doors closing.",
+    29: "29° — anaretic; decisive finality / jump.",
+  };
+  return table[d] ?? "";
+}
