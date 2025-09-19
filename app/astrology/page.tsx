@@ -1,158 +1,121 @@
 "use client";
-import { useMemo, useState } from "react";
-import { computePlanetLongitudes, zodiacSign } from "@/lib/astro";
-import { findAspects } from "@/lib/aspects";
-import { degreeBlurb } from "@/lib/degreeTheory";
 
-type Form = {
-  name: string;
-  date: string;   // YYYY-MM-DD
-  time: string;   // HH:MM (24h)
-  tz: string;     // minutes offset like "-300" or "0" or "330"
-  city: string;
-  region: string; // state/province (optional)
-  country: string;
-};
+import { useEffect, useMemo, useState } from "react";
+import { computeChart } from "@/lib/astroReal";
+import { lonToSignDeg } from "@/lib/zodiac";
 
-const tzOptions = [
-  { label: "UTC (±0)", value: "0" },
-  { label: "US Eastern (-300)", value: "-300" },
-  { label: "US Central (-360)", value: "-360" },
-  { label: "US Mountain (-420)", value: "-420" },
-  { label: "US Pacific (-480)", value: "-480" },
-  { label: "India (+330)", value: "330" },
-  { label: "Japan (+540)", value: "540" },
-];
+type Body = { name: string; longitude: number };
 
-export default function AstrologyPage(){
-  const [form, setForm] = useState<Form>({
-    name: "",
-    date: "",
-    time: "",
-    tz: "0",
-    city: "",
-    region: "",
-    country: "",
-  });
-  const [touched, setTouched] = useState(false);
+export default function AstrologyPage() {
+  const now = useMemo(() => new Date(), []);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const defaultDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  const defaultTime = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const defaultTz = -now.getTimezoneOffset(); // minutes east of UTC
 
-  const birthplace = [form.city, form.region, form.country].filter(Boolean).join(", ");
+  const [date, setDate] = useState(defaultDate);
+  const [time, setTime] = useState(defaultTime);
+  const [tzOffset, setTzOffset] = useState(defaultTz);
+  const [lat, setLat] = useState(41.8781);   // Chicago placeholder
+  const [lon, setLon] = useState(-87.6298);  // Chicago placeholder
+  const [bodies, setBodies] = useState<Body[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
-  const result = useMemo(()=>{
-    if (!form.date || !form.time) return null;
-    const planets = computePlanetLongitudes(form.date, form.time, parseInt(form.tz,10), birthplace);
-    const bodies = planets.map(p=>({ name: p.planet, longitude: p.longitude }));
-    const aspects = findAspects(bodies, true);
-    return { planets, aspects };
-  }, [form, birthplace]);
+  async function generate() {
+    try {
+      setLoading(true);
+      setErr(null);
+      const result = await computeChart(date, time, tzOffset, lat, lon);
+      setBodies(result.bodies);
+    } catch (e: any) {
+      setErr(e?.message || "Failed to compute chart");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  const canRun = !!form.date && !!form.time;
+  useEffect(() => {
+    generate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-start justify-between gap-4">
-        <h1 className="text-3xl font-bold">Astrology</h1>
-        <span className="text-xs rounded-full px-3 py-1 bg-amber-500/15 text-amber-300 border border-amber-600/30">
-          Demo positions — accurate ephemeris coming next
-        </span>
-      </div>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold">Astrology</h1>
 
-      <form
-        className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-neutral-900/60 p-4 rounded-2xl"
-        onSubmit={(e)=>{ e.preventDefault(); setTouched(true); }}
-      >
-        <div className="md:col-span-3">
-          <label className="block text-sm text-neutral-400 mb-1">Name (optional)</label>
-          <input value={form.name} onChange={e=>setForm(f=>({...f, name:e.target.value}))}
-            className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2" placeholder="Your name" />
-        </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <label className="flex flex-col gap-1">
+          <span className="text-sm text-neutral-400">Date</span>
+          <input className="rounded-md bg-neutral-800 px-3 py-2"
+                 type="date" value={date}
+                 onChange={(e) => setDate(e.target.value)} />
+        </label>
 
-        <div>
-          <label className="block text-sm text-neutral-400 mb-1">Birth date</label>
-          <input type="date" value={form.date} onChange={e=>setForm(f=>({...f, date:e.target.value}))}
-            className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2" />
-        </div>
+        <label className="flex flex-col gap-1">
+          <span className="text-sm text-neutral-400">Time (local)</span>
+          <input className="rounded-md bg-neutral-800 px-3 py-2"
+                 type="time" value={time}
+                 onChange={(e) => setTime(e.target.value)} />
+        </label>
 
-        <div>
-          <label className="block text-sm text-neutral-400 mb-1">Birth time</label>
-          <input type="time" value={form.time} onChange={e=>setForm(f=>({...f, time:e.target.value}))}
-            className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2" />
-          <p className="text-xs text-neutral-500 mt-1">24-hour format preferred</p>
-        </div>
+        <label className="flex flex-col gap-1">
+          <span className="text-sm text-neutral-400">TZ offset (minutes, east of UTC)</span>
+          <input className="rounded-md bg-neutral-800 px-3 py-2"
+                 type="number" value={tzOffset}
+                 onChange={(e) => setTzOffset(parseInt(e.target.value || "0", 10))} />
+          <span className="text-xs text-neutral-500">
+            Browser default is {defaultTz}.
+          </span>
+        </label>
 
-        <div>
-          <label className="block text-sm text-neutral-400 mb-1">Timezone</label>
-          <select value={form.tz} onChange={e=>setForm(f=>({...f, tz:e.target.value}))}
-            className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2">
-            {tzOptions.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
-        </div>
+        <label className="flex flex-col gap-1">
+          <span className="text-sm text-neutral-400">Latitude</span>
+          <input className="rounded-md bg-neutral-800 px-3 py-2"
+                 type="number" step="0.0001" value={lat}
+                 onChange={(e) => setLat(parseFloat(e.target.value || "0"))} />
+        </label>
 
-        <div>
-          <label className="block text-sm text-neutral-400 mb-1">City</label>
-          <input value={form.city} onChange={e=>setForm(f=>({...f, city:e.target.value}))}
-            className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2" placeholder="e.g., Chicago" />
-        </div>
-        <div>
-          <label className="block text-sm text-neutral-400 mb-1">Region (state / province)</label>
-          <input value={form.region} onChange={e=>setForm(f=>({...f, region:e.target.value}))}
-            className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2" placeholder="e.g., Illinois" />
-        </div>
-        <div>
-          <label className="block text-sm text-neutral-400 mb-1">Country</label>
-          <input value={form.country} onChange={e=>setForm(f=>({...f, country:e.target.value}))}
-            className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2" placeholder="e.g., United States" />
-        </div>
+        <label className="flex flex-col gap-1">
+          <span className="text-sm text-neutral-400">Longitude</span>
+          <input className="rounded-md bg-neutral-800 px-3 py-2"
+                 type="number" step="0.0001" value={lon}
+                 onChange={(e) => setLon(parseFloat(e.target.value || "0"))} />
+        </label>
 
-        <div className="md:col-span-3">
-          <button
-            className="rounded-xl bg-violet-600 hover:bg-violet-700 px-4 py-2 font-medium"
-            onClick={()=>setTouched(true)}
-          >
-            Generate Report
+        <div className="flex items-end">
+          <button onClick={generate}
+                  className="rounded-lg bg-violet-600 px-4 py-2 font-medium hover:bg-violet-700 disabled:opacity-50"
+                  disabled={loading}>
+            {loading ? "Generating…" : "Generate Report"}
           </button>
         </div>
-      </form>
+      </div>
 
-      {touched && !canRun && (
-        <p className="text-red-400">Please enter both Birth date and Birth time.</p>
-      )}
+      {err && <p className="text-red-400">{err}</p>}
 
-      {canRun && result && (
-        <div className="space-y-10">
-          <section className="bg-neutral-900/60 p-5 rounded-2xl">
-            <h2 className="text-2xl font-semibold mb-4">Planetary Positions</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {result.planets.map((p)=> {
-                const z = zodiacSign(p.longitude);
-                return (
-                  <div key={p.planet} className="rounded-xl border border-neutral-800 p-3">
-                    <div className="font-medium">{p.planet}</div>
-                    <div className="text-neutral-300">{z.sign} {z.deg}° ({p.longitude.toFixed(2)}° ecliptic)</div>
-                    <div className="text-neutral-400 text-sm mt-1">{degreeBlurb(p.longitude)}</div>
-                  </div>
-                );
-              })}
-            </div>
-            <p className="text-xs text-neutral-500 mt-3">
-              *Using demo math. We’re about to replace this with accurate ephemeris + houses/asteroids.
-            </p>
-          </section>
-
-          <section className="bg-neutral-900/60 p-5 rounded-2xl">
-            <h2 className="text-2xl font-semibold mb-4">Aspects</h2>
-            <div className="space-y-2">
-              {findAspects(result.planets.map(p=>({ name: p.planet, longitude: p.longitude })), true).map((a, i)=>(
-                <div key={i} className="rounded-lg border border-neutral-800 px-3 py-2">
-                  <div className="font-medium">
-                    {a.a} {a.name} {a.b} <span className="text-neutral-400">({a.actual.toFixed(1)}°, orb {a.orb.toFixed(1)}°)</span>
-                  </div>
+      <section className="space-y-3">
+        <h2 className="text-2xl font-semibold">Planetary Positions</h2>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {bodies.map((b) => {
+            const { sign, deg } = lonToSignDeg(b.longitude);
+            return (
+              <div key={b.name} className="rounded-xl border border-neutral-800 bg-neutral-900 p-4">
+                <div className="text-neutral-300">{b.name}</div>
+                <div className="text-neutral-100">
+                  {sign} {deg}°
+                  <span className="text-neutral-500">
+                    {" "}({Math.round(b.longitude * 100) / 100}° ecliptic)
+                  </span>
                 </div>
-              ))}
-            </div>
-          </section>
+              </div>
+            );
+          })}
         </div>
-      )}
+        {bodies.length === 0 && !loading && (
+          <p className="text-neutral-400">Fill in date/time and click “Generate Report”.</p>
+        )}
+      </section>
     </div>
   );
 }
