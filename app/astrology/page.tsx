@@ -6,10 +6,12 @@ import { degreeBlurb } from "@/lib/degreeTheory";
 
 type Form = {
   name: string;
-  date: string;  // YYYY-MM-DD
-  time: string;  // HH:MM
-  tz: string;    // minutes offset like "-300" or "0" or "330"
-  location: string; // free text for now
+  date: string;   // YYYY-MM-DD
+  time: string;   // HH:MM (24h)
+  tz: string;     // minutes offset like "-300" or "0" or "330"
+  city: string;
+  region: string; // state/province (optional)
+  country: string;
 };
 
 const tzOptions = [
@@ -28,45 +30,54 @@ export default function AstrologyPage(){
     date: "",
     time: "",
     tz: "0",
-    location: "",
+    city: "",
+    region: "",
+    country: "",
   });
   const [touched, setTouched] = useState(false);
 
+  const birthplace = [form.city, form.region, form.country].filter(Boolean).join(", ");
+
   const result = useMemo(()=>{
     if (!form.date || !form.time) return null;
-    const planets = computePlanetLongitudes(form.date, form.time, parseInt(form.tz,10), form.location);
+    const planets = computePlanetLongitudes(form.date, form.time, parseInt(form.tz,10), birthplace);
     const bodies = planets.map(p=>({ name: p.planet, longitude: p.longitude }));
     const aspects = findAspects(bodies, true);
     return { planets, aspects };
-  }, [form]);
+  }, [form, birthplace]);
 
   const canRun = !!form.date && !!form.time;
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold">Astrology</h1>
-      <p className="text-neutral-300">Enter your birth details to generate a birth chart report. (Ephemeris upgrade with houses & asteroids is next.)</p>
+      <div className="flex items-start justify-between gap-4">
+        <h1 className="text-3xl font-bold">Astrology</h1>
+        <span className="text-xs rounded-full px-3 py-1 bg-amber-500/15 text-amber-300 border border-amber-600/30">
+          Demo positions — accurate ephemeris coming next
+        </span>
+      </div>
 
       <form
-        className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-neutral-900/60 p-4 rounded-2xl"
-        onSubmit={e=>{ e.preventDefault(); setTouched(true); }}
+        className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-neutral-900/60 p-4 rounded-2xl"
+        onSubmit={(e)=>{ e.preventDefault(); setTouched(true); }}
       >
-        <div>
+        <div className="md:col-span-3">
           <label className="block text-sm text-neutral-400 mb-1">Name (optional)</label>
           <input value={form.name} onChange={e=>setForm(f=>({...f, name:e.target.value}))}
             className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2" placeholder="Your name" />
         </div>
 
         <div>
-          <label className="block text-sm text-neutral-400 mb-1">Date</label>
+          <label className="block text-sm text-neutral-400 mb-1">Birth date</label>
           <input type="date" value={form.date} onChange={e=>setForm(f=>({...f, date:e.target.value}))}
             className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2" />
         </div>
 
         <div>
-          <label className="block text-sm text-neutral-400 mb-1">Time</label>
+          <label className="block text-sm text-neutral-400 mb-1">Birth time</label>
           <input type="time" value={form.time} onChange={e=>setForm(f=>({...f, time:e.target.value}))}
             className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2" />
+          <p className="text-xs text-neutral-500 mt-1">24-hour format preferred</p>
         </div>
 
         <div>
@@ -77,13 +88,23 @@ export default function AstrologyPage(){
           </select>
         </div>
 
-        <div className="md:col-span-2">
-          <label className="block text-sm text-neutral-400 mb-1">Birthplace (free text)</label>
-          <input value={form.location} onChange={e=>setForm(f=>({...f, location:e.target.value}))}
-            className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2" placeholder="City, Country" />
+        <div>
+          <label className="block text-sm text-neutral-400 mb-1">City</label>
+          <input value={form.city} onChange={e=>setForm(f=>({...f, city:e.target.value}))}
+            className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2" placeholder="e.g., Chicago" />
+        </div>
+        <div>
+          <label className="block text-sm text-neutral-400 mb-1">Region (state / province)</label>
+          <input value={form.region} onChange={e=>setForm(f=>({...f, region:e.target.value}))}
+            className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2" placeholder="e.g., Illinois" />
+        </div>
+        <div>
+          <label className="block text-sm text-neutral-400 mb-1">Country</label>
+          <input value={form.country} onChange={e=>setForm(f=>({...f, country:e.target.value}))}
+            className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2" placeholder="e.g., United States" />
         </div>
 
-        <div className="md:col-span-2">
+        <div className="md:col-span-3">
           <button
             className="rounded-xl bg-violet-600 hover:bg-violet-700 px-4 py-2 font-medium"
             onClick={()=>setTouched(true)}
@@ -94,7 +115,7 @@ export default function AstrologyPage(){
       </form>
 
       {touched && !canRun && (
-        <p className="text-red-400">Please enter both Date and Time.</p>
+        <p className="text-red-400">Please enter both Birth date and Birth time.</p>
       )}
 
       {canRun && result && (
@@ -114,7 +135,7 @@ export default function AstrologyPage(){
               })}
             </div>
             <p className="text-xs text-neutral-500 mt-3">
-              *Positions currently use a temporary demo engine. We’ll plug in Swiss Ephemeris next for exact planets, houses, and asteroids.
+              *Using demo math. We’re about to replace this with accurate ephemeris + houses/asteroids.
             </p>
           </section>
 
