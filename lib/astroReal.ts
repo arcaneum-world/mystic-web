@@ -1,4 +1,12 @@
-import { julian, planetposition, solar, moonposition } from "astronomia";
+import { julian, solar, moonposition, planetposition } from "astronomia";
+import earth from "astronomia/data/vsop87Bearth.json";
+import jupiter from "astronomia/data/vsop87Bjupiter.json";
+import mars from "astronomia/data/vsop87Bmars.json";
+import mercury from "astronomia/data/vsop87Bmercury.json";
+import neptune from "astronomia/data/vsop87Bneptune.json";
+import saturn from "astronomia/data/vsop87Bsaturn.json";
+import uranus from "astronomia/data/vsop87Buranus.json";
+import venus from "astronomia/data/vsop87Bvenus.json";
 
 export type BodyPos = {
   name: string;
@@ -12,42 +20,37 @@ export async function computeChart(
   lat: number,
   lon: number
 ): Promise<{ bodies: BodyPos[] }> {
-  // Parse inputs
   const [y, m, d] = date.split("-").map(Number);
   const [hh, mm] = time.split(":").map(Number);
 
-  // Convert to UTC
-  const ut = (hh + mm / 60) - tzOffset / 60;
-  const jd = julian.CalendarGregorianToJD(y, m, d) + ut / 24;
+  // Convert to UTC fractional day
+  const ut = (hh + mm / 60 - tzOffset / 60) / 24;
+  const jd = julian.CalendarGregorianToJD(y, m, d) + ut;
 
-  // Sun
-  const sunLon = solar.apparentVSOP87("earth", jd).lon;
+  // Sun and Moon
+  const { lon: sunLon } = solar.apparentVSOP87(earth, jd);
+  const { lon: moonLon } = moonposition.position(jd);
 
-  // Moon
-  const moonLon = moonposition.position(jd).lon;
-
-  // Planets Mercury → Pluto
-  const mercury = planetposition.mercury.position(jd).lon;
-  const venus = planetposition.venus.position(jd).lon;
-  const mars = planetposition.mars.position(jd).lon;
-  const jupiter = planetposition.jupiter.position(jd).lon;
-  const saturn = planetposition.saturn.position(jd).lon;
-  const uranus = planetposition.uranus.position(jd).lon;
-  const neptune = planetposition.neptune.position(jd).lon;
-  const pluto = planetposition.pluto.position(jd).lon;
+  // Planets
+  const mercuryP = new planetposition.Planet(mercury);
+  const venusP = new planetposition.Planet(venus);
+  const marsP = new planetposition.Planet(mars);
+  const jupiterP = new planetposition.Planet(jupiter);
+  const saturnP = new planetposition.Planet(saturn);
+  const uranusP = new planetposition.Planet(uranus);
+  const neptuneP = new planetposition.Planet(neptune);
 
   return {
     bodies: [
       { name: "Sun", longitude: sunLon },
       { name: "Moon", longitude: moonLon },
-      { name: "Mercury", longitude: mercury },
-      { name: "Venus", longitude: venus },
-      { name: "Mars", longitude: mars },
-      { name: "Jupiter", longitude: jupiter },
-      { name: "Saturn", longitude: saturn },
-      { name: "Uranus", longitude: uranus },
-      { name: "Neptune", longitude: neptune },
-      { name: "Pluto", longitude: pluto },
+      { name: "Mercury", longitude: mercuryP.position(jd).lon },
+      { name: "Venus", longitude: venusP.position(jd).lon },
+      { name: "Mars", longitude: marsP.position(jd).lon },
+      { name: "Jupiter", longitude: jupiterP.position(jd).lon },
+      { name: "Saturn", longitude: saturnP.position(jd).lon },
+      { name: "Uranus", longitude: uranusP.position(jd).lon },
+      { name: "Neptune", longitude: neptuneP.position(jd).lon },
     ],
   };
 }
