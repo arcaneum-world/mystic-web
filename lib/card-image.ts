@@ -1,59 +1,53 @@
+import { Suit } from './deck';
+
 /**
- * card-image.ts
- * Map cards to the filenames you showed (public/cards/...).
- * Filenames expected:
- *  - major_arcana_fool.png, major_arcana_chariot.png, etc. (lowercase keys)
- *  - minor_arcana_{suit}_{token}.png  e.g. minor_arcana_cups_7.png or minor_arcana_wands_page.png
+ * Return an ordered list of possible image paths for a card.
+ * The UI will try each in order until one loads.
  */
+export function candidatePaths(card: any): string[] {
+  if (!card) return ['/cards/major_arcana_fool.png'];
 
-export type Suit = 'wands'|'cups'|'swords'|'pentacles';
-export type Rank = 'ace'|'two'|'three'|'four'|'five'|'six'|'seven'|'eight'|'nine'|'ten'|'page'|'knight'|'queen'|'king';
+  const list: string[] = [];
 
-const numToWord: Record<number,string> = {
-  1: 'a', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 10: '10'
-};
+  if (card.arcana === 'major') {
+    const k = (card.key ?? card.name ?? 'fool').toLowerCase().replace(/^the\s+/,'').replace(/\s+/g,'_');
 
-// mapping for major arcana names to your file suffixes (lowercase, underscore/words)
-// adjust keys if your filenames differ
-const majorMap: Record<string,string> = {
-  'fool':'fool','magician':'magician','priestess':'priestess','empress':'empress','emperor':'emperor',
-  'hierophant':'hierophant','lovers':'lovers','chariot':'chariot','strength':'strength','hermit':'hermit',
-  'wheel':'fortune','justice':'justice','hanged':'hanged','death':'death','temperance':'temperance',
-  'devil':'devil','tower':'tower','star':'star','moon':'moon','sun':'sun','judgement':'judgement','world':'world'
-};
+    // common variants for majors
+    const variants = new Set<string>();
+    variants.add(k);
+    if (k === 'fortune' || k.includes('wheel')) { variants.add('fortune'); variants.add('wheel'); }
+    if (k === 'priestess' || k.includes('high_priestess')) { variants.add('priestess'); variants.add('high_priestess'); }
+    if (k === 'hanged' || k.includes('hanged_man')) { variants.add('hanged'); variants.add('hanged_man'); }
+    if (k === 'judgement' || k === 'judgment') { variants.add('judgement'); variants.add('judgment'); }
 
-export function pathForMajor(key: string) {
-  const k = key.toLowerCase().replace(/the\s+/,'').replace(/\s+/g,'_');
-  const mapped = majorMap[k] ?? k;
-  return `/cards/major_arcana_${mapped}.png`;
-}
+    for (const v of variants) list.push(`/cards/major_arcana_${v}.png`);
+    return list;
+  }
 
-export function pathForMinor(suit: Suit, rank: Rank | number) {
-  let token = '';
-  if (typeof rank === 'number') {
-    token = numToWord[Math.max(1, Math.min(10, rank))] ?? String(rank);
+  // minor
+  const suit: Suit = card.suit;
+  const r = card.rank;
+  const variants: string[] = [];
+
+  const push = (tok:string)=>variants.push(`/cards/minor_arcana_${suit}_${tok}.png`);
+
+  if (typeof r === 'number') {
+    // numbers: expect 1..10 files using 1..10 or a for ace
+    if (r === 1) { push('a'); push('ace'); }
+    else { push(String(r)); }
   } else {
-    // keep page/knight/queen/king or 'a' for ace if your files use 'a' or 'ace'
-    if (rank === 'ace') token = 'a';
-    else if (rank === 'page') token = 'page';
-    else if (rank === 'knight') token = 'knight';
-    else if (rank === 'queen') token = 'q';
-    else if (rank === 'king') token = 'k';
+    const rr = String(r).toLowerCase();
+    if (rr === 'ace') { push('a'); push('ace'); }
+    else if (rr === 'king') { push('k'); push('king'); }
+    else if (rr === 'queen') { push('q'); push('queen'); }
+    else if (rr === 'knight') { push('knight'); push('n'); }
+    else if (rr === 'page') { push('page'); push('p'); }
     else {
-      // number words two..ten
-      const wordMap: any = { two:'2', three:'3', four:'4', five:'5', six:'6', seven:'7', eight:'8', nine:'9', ten:'10' };
-      token = wordMap[rank] ?? (rank as string);
+      // two..ten as numbers
+      const map: any = {two:'2',three:'3',four:'4',five:'5',six:'6',seven:'7',eight:'8',nine:'9',ten:'10'};
+      push(map[rr] ?? rr);
     }
   }
-  return `/cards/minor_arcana_${suit}_${token}.png`;
-}
 
-/**
- * Convenience: given a card object {arcana:'major'|'minor', name?, suit?, rank?}
- * return public path string.
- */
-export function cardImgPath(card: any) {
-  if (!card) return '/cards/major_arcana_fool.png';
-  if (card.arcana === 'major') return pathForMajor(card.key ?? card.name ?? 'fool');
-  return pathForMinor(card.suit, card.rank);
+  return variants;
 }
