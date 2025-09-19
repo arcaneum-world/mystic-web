@@ -1,46 +1,53 @@
 import { julian, planetposition, solar, moonposition } from "astronomia";
 
-// Vercel/TS sometimes fusses about JSON imports;
-// using a runtime require avoids needing resolveJsonModule.
-const earth = require("astronomia/data/vsop87b/earth.json");
-
 export type BodyPos = {
   name: string;
   longitude: number;
 };
 
-const earthPlanet = new planetposition.Planet(earth);
-
-/**
- * Compute Sun & Moon longitudes for a given birth moment.
- * (We’ll expand to full planets/aspects next.)
- */
 export async function computeChart(
-  date: string,        // "YYYY-MM-DD"
-  time: string,        // "HH:mm"
-  tzOffset: number,    // e.g. -300 for US Central (minutes)
-  lat: number,         // not used yet
-  lon: number          // not used yet
+  date: string,
+  time: string,
+  tzOffset: number,
+  lat: number,
+  lon: number
 ): Promise<{ bodies: BodyPos[] }> {
+  // Parse inputs
   const [y, m, d] = date.split("-").map(Number);
   const [hh, mm] = time.split(":").map(Number);
 
-  // Convert to UTC hours
-  const ut = hh + mm / 60 - tzOffset / 60;
-
-  // Julian day (UTC)
+  // Convert to UTC
+  const ut = (hh + mm / 60) - tzOffset / 60;
   const jd = julian.CalendarGregorianToJD(y, m, d) + ut / 24;
 
-  // Sun apparent ecliptic longitude (degrees)
-  const sunLon = solar.apparentVSOP87(earthPlanet, jd).lon;
+  // Sun
+  const sunLon = solar.apparentVSOP87("earth", jd).lon;
 
-  // Moon ecliptic longitude (degrees)
+  // Moon
   const moonLon = moonposition.position(jd).lon;
+
+  // Planets Mercury → Pluto
+  const mercury = planetposition.mercury.position(jd).lon;
+  const venus = planetposition.venus.position(jd).lon;
+  const mars = planetposition.mars.position(jd).lon;
+  const jupiter = planetposition.jupiter.position(jd).lon;
+  const saturn = planetposition.saturn.position(jd).lon;
+  const uranus = planetposition.uranus.position(jd).lon;
+  const neptune = planetposition.neptune.position(jd).lon;
+  const pluto = planetposition.pluto.position(jd).lon;
 
   return {
     bodies: [
       { name: "Sun", longitude: sunLon },
       { name: "Moon", longitude: moonLon },
+      { name: "Mercury", longitude: mercury },
+      { name: "Venus", longitude: venus },
+      { name: "Mars", longitude: mars },
+      { name: "Jupiter", longitude: jupiter },
+      { name: "Saturn", longitude: saturn },
+      { name: "Uranus", longitude: uranus },
+      { name: "Neptune", longitude: neptune },
+      { name: "Pluto", longitude: pluto },
     ],
   };
 }
