@@ -13,6 +13,7 @@
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.57.4",
     "astronomia": "^4.2.0",
+    "astronomy-engine": "^2.1.19",
     "next": "15.5.3",
     "node-geocoder": "^4.4.1",
     "react": "19.1.0",
