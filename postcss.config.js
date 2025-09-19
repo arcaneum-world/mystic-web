@@ -1,7 +1,7 @@
-/** PostCSS config for Tailwind v4 */
+/** PostCSS config for Next 15 + Tailwind v4 */
 module.exports = {
-  plugins: [
-    require("@tailwindcss/postcss"),
-    require("autoprefixer"),
-  ],
+  plugins: {
+    '@tailwindcss/postcss': {},
+    'autoprefixer': {}
+  }
 };
