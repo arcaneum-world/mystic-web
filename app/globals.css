@@ -1,7 +1,31 @@
 @import "tailwindcss";
 
-/* (Optional) minimal base so raw HTML doesn’t look naked while building */
+/* Typewriter font */
+@import url("https://fonts.googleapis.com/css2?family=Special+Elite&display=swap");
+
 :root { color-scheme: dark; }
 html, body { min-height: 100%; }
 body { @apply bg-neutral-950 text-neutral-100; }
+
+/* Links */
 a { @apply text-indigo-400 hover:text-indigo-300; }
+
+/* Sitewide heading look: sunset gradient + typewriter */
+h1, h2, .brand-title {
+  font-family: "Special Elite", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  @apply bg-gradient-to-r from-pink-300 via-amber-300 to-yellow-300 bg-clip-text text-transparent;
+}
+
+/* Soft galaxy panel behind hero sections (optional utility) */
+.galaxy-card { 
+  @apply rounded-3xl border border-white/10 shadow-xl;
+  background: radial-gradient(120% 120% at 10% 0%, rgba(139,92,246,.18) 0%, rgba(2,6,23,0) 55%),
+              radial-gradient(120% 120% at 90% 100%, rgba(34,197,94,.14) 0%, rgba(2,6,23,0) 60%),
+              linear-gradient(180deg, rgba(2,6,23,.8), rgba(2,6,23,.6));
+}
+
+/* === Twinkle starfield === */
+.starfield {
+  position: fixed; inset: 0; pointer-events: none; z-index: -1;
+}
+canvas.twinkles { width: 100%; height: 100%; display: block; }
